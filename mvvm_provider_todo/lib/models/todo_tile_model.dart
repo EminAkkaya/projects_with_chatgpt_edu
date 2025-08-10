@@ -5,6 +5,8 @@ class TodoTileModel {
   String _title;
   String? description;
   bool _isDone = false;
+  bool showDescription = false;
+
   TodoTileModel(this._title, {this.description}) : id = Uuid().v4();
 
   String get getTitle => _title;
@@ -14,5 +16,9 @@ class TodoTileModel {
 
   void toggleDone() {
     _isDone = !_isDone;
+  }
+
+  void toggleShowDescription() {
+    showDescription = !showDescription;
   }
 }

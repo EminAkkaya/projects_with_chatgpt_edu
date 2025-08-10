@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mvvm_provider_todo/models/todo_status.dart';
+import 'package:mvvm_provider_todo/viewmodels/todo_view_model.dart';
+import 'package:provider/provider.dart';
 
 class TodoView extends StatefulWidget {
   const TodoView({super.key});
@@ -10,28 +13,6 @@ class TodoView extends StatefulWidget {
 class _TodoViewState extends State<TodoView> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
-
-  final List<Map<String, dynamic>> mockTodos = [
-    {"title": "Buy milk", "isDone": false},
-    {
-      "title": "Study Flutter",
-      "isDone": true,
-      "description": "MVVM pattern",
-      "showDescription": false,
-    },
-    {
-      "title": "Study Flutter Provider",
-      "isDone": false,
-      "description": "MVVM pattern",
-      "showDescription": false,
-    },
-    {
-      "title": "Study Flutter Riverpod",
-      "isDone": true,
-      "description": "State management with riverpod sample app",
-      "showDescription": false,
-    },
-  ];
 
   bool showDescriptionField = false;
 
@@ -53,7 +34,7 @@ class _TodoViewState extends State<TodoView> {
               TodosText(),
               Row(
                 children: [
-                  Expanded(child: TextField()),
+                  Expanded(child: TextField(controller: titleController)),
                   IconButton(
                     onPressed: () {
                       setState(() {
@@ -64,46 +45,85 @@ class _TodoViewState extends State<TodoView> {
                     color: Colors.blue[400],
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      context.read<TodoViewModel>().addTodo(
+                        titleController.text,
+                        description: showDescriptionField == false
+                            ? null
+                            : descriptionController.text,
+                      );
+                      titleController.clear();
+                      descriptionController.clear();
+                    },
                     icon: Icon(Icons.add),
                     color: Colors.green[600],
                   ),
                 ],
               ),
               if (showDescriptionField)
-                TextField(decoration: InputDecoration(hintText: "Description")),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(hintText: "Description"),
+                ),
 
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () {}, child: Text("All")),
-                  TextButton(onPressed: () {}, child: Text("Done")),
-                  TextButton(onPressed: () {}, child: Text("Pending")),
+                  TextButton(
+                    onPressed: () {
+                      context.read<TodoViewModel>().changeFilter(
+                        FilterType.all,
+                      );
+                    },
+                    child: Text("All"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      context.read<TodoViewModel>().changeFilter(
+                        FilterType.done,
+                      );
+                    },
+                    child: Text("Done"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      context.read<TodoViewModel>().changeFilter(
+                        FilterType.pending,
+                      );
+                    },
+                    child: Text("Pending"),
+                  ),
                 ],
               ),
               Expanded(
                 child: ListView.builder(
-                  itemCount: mockTodos.length,
+                  itemCount: context
+                      .watch<TodoViewModel>()
+                      .filteredTodos
+                      .length,
                   itemBuilder: (context, index) {
-                    final todo = mockTodos[index];
+                    final todo = context
+                        .watch<TodoViewModel>()
+                        .filteredTodos[index];
                     return Dismissible(
-                      key: Key(todo["title"]),
-                      onDismissed: (direction) {},
+                      key: Key(todo.getTitle),
+                      onDismissed: (direction) {
+                        context.read<TodoViewModel>().removeTodo(todo.id);
+                      },
                       child: ListTile(
                         leading: Checkbox(
-                          value: todo["isDone"],
-                          onChanged: (value) {},
+                          value: todo.isDone,
+                          onChanged: (value) {
+                            context.read<TodoViewModel>().toggleTodo(todo.id);
+                          },
                         ),
-                        title: Text(todo["title"]),
-                        trailing: todo["description"] != null
+                        title: Text(todo.getTitle),
+                        trailing: todo.description != null
                             ? IconButton(
                                 onPressed: () {
                                   setState(() {
-                                    if (todo["showDescription"] != null) {
-                                      todo["showDescription"] =
-                                          !todo["showDescription"];
-                                    }
+                                    todo.toggleShowDescription();
                                   });
                                 },
                                 icon: Icon(
@@ -112,8 +132,8 @@ class _TodoViewState extends State<TodoView> {
                                 ),
                               )
                             : SizedBox(),
-                        subtitle: todo["showDescription"] == true
-                            ? Text(todo["description"])
+                        subtitle: todo.showDescription == true
+                            ? Text(todo.description!)
                             : null,
                       ),
                     );

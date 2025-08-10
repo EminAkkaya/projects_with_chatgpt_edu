@@ -8,6 +8,8 @@ class TodoViewModel extends ChangeNotifier {
 
   List<TodoTileModel> get filteredTodos => _state.filteredTodos;
 
+  int get lenght => _state.todos.length;
+
   void addTodo(String title, {String? description}) {
     if (title.isEmpty) return;
     final newTodo = TodoTileModel(title, description: description);
@@ -22,9 +24,9 @@ class TodoViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleTodo(String title) {
+  void toggleTodo(String id) {
     final updatedTodos = _state.todos.map((todo) {
-      if (todo.getTitle == title) {
+      if (todo.id == id) {
         todo.toggleDone();
       }
       return todo;
